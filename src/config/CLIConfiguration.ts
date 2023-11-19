@@ -1,5 +1,4 @@
 // Importing the Env enum from the Constants module
-import 'dotenv/config';
 import { Env } from "./Constants.js";
 
 // Class representing CLI configuration

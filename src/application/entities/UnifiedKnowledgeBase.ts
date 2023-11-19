@@ -91,4 +91,61 @@ export class UnifiedKnowledgeBase {
         return '';
     }
 
+    /**
+     * Factory method to create a UnifiedKnowledgeBase instance from different source types.
+     * @param sourceType The type of the source ('Tweet', 'News', 'Content').
+     * @param sourceObject The source object (Content, News, or Tweet).
+     * @returns {UnifiedKnowledgeBase} An instance of UnifiedKnowledgeBase.
+     */
+    static createFromSource(sourceType: string, sourceObject: any): UnifiedKnowledgeBase {
+        let content, url, finalUrl, description, author, createdAt, updatedAt, sourceId;
+        const id = sourceObject.id;
+        const baseEntityId = sourceObject.id; // Assuming it's the same as sourceId
+
+        // Determine fields based on source type
+        switch (sourceType) {
+            case 'Tweet':
+                sourceId = sourceObject.id;
+                content = sourceObject.text;
+                url = null; // Tweets might not have a separate URL field
+                finalUrl = null;
+                description = null;
+                author = sourceObject.title; // Author is the title for Tweets
+                createdAt = sourceObject.postTime;
+                updatedAt = null;
+                break;
+
+            case 'News':
+                sourceId = sourceObject.id;
+                content = sourceObject.title;
+                url = sourceObject.link;
+                finalUrl = null; // To be filled in after resolving redirection
+                description = sourceObject.description;
+                author = sourceObject.title.split('-').pop().trim(); // Extract author from title
+                createdAt = sourceObject.publicationDate;
+                updatedAt = null;
+                break;
+
+            case 'Content':
+                sourceId = sourceObject.id;
+                content = sourceObject.content;
+                url = sourceObject.baseUrl; // Assuming baseUrl is the URL
+                finalUrl = null; // To be filled in after resolving redirection
+                description = null; // Content might not have a description
+                author = ''; // Author not defined for Content
+                createdAt = sourceObject.relatedCreateAt; // Assuming this is the creation date
+                updatedAt = null;
+                break;
+
+            default:
+                throw new Error(`Unsupported source type: ${sourceType}`);
+        }
+
+        const fetchedAt = sourceObject.fetchedAt || Date.now(); // Use current time if not provided
+
+        return new UnifiedKnowledgeBase(
+            id, sourceType, sourceId, content, url, finalUrl, description, author, baseEntityId, createdAt, fetchedAt, updatedAt
+        );
+    }
+
 }

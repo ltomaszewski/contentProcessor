@@ -1,5 +1,5 @@
 import * as r from 'rethinkdb';
-import { Schema } from './Schema';
+import { Schema } from './Schema.js';
 
 // DatabaseRepository - a repository for interacting with RethinkDB databases
 export class DatabaseRepository {
@@ -20,10 +20,12 @@ export class DatabaseRepository {
     }
 
     // connect - establishes a connection to the RethinkDB server
-    async connect(databaseName: string) {
+    async connect(databaseName: string, updateSchema: boolean = true) {
         this.conn = await r.connect({ host: this.host, port: this.port })
-        const schema = new Schema(databaseName, this)
-        await schema.updateSchemaIfNeeded(this.forceDrop)
+        if (updateSchema) {
+            const schema = new Schema(databaseName, this)
+            await schema.updateSchemaIfNeeded(this.forceDrop)
+        }
     }
 
     // closeConnection - closes the RethinkDB connection
@@ -156,7 +158,7 @@ export class DatabaseRepository {
     }
 
     // changes - retrieves a list of changes made to a table
-    async changes<T>(databaseName: string, tableName: string, callback: (change: T[]) => void) {
+    async changes(databaseName: string, tableName: string, callback: (new_val: any, old_val: any, err: Error) => void) {
         if (this.conn !== null) {
             const changeCursor = await r
                 .db(databaseName)
@@ -165,14 +167,15 @@ export class DatabaseRepository {
                 .run(this.conn);
 
             changeCursor.each((err, change) => {
-                if (err) {
-                    throw err;
-                }
-                callback(change);
+                // Insert: new_val present and old_val null
+                // Update: diffrence between old_val and new_val give answer what has changed
+                // Delete: old_val present and new_val null
+                const old_val = change.old_val;
+                const new_val = change.new_val;
+                callback(new_val, old_val, err)
             });
         } else {
             throw new Error('Connection is null');
         }
     }
 }
-

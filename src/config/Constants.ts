@@ -10,11 +10,14 @@ export const API_BASE_URL: string = "https://api.example.com";
 // Maximum number of retries for API requests
 export const MAX_RETRIES: number = 3;
 // DatabaseHost - the hostname of the RethinkDB server
-export const DatabaseHost = '192.168.1.1';
+export const DatabaseHost = '192.168.50.101';
 // DatabasePort - the port number of the RethinkDB server
 export const DatabasePort = 28015;
 // DatabaseForceDrop - indicates whether the database should be forcefully dropped (true/false)
 export const DatabaseForceDrop = false;
+
+export const baseContentFetcherDatabaseName = "CONTENT_FETCHER";
+export const baseNewsAggregatorDatabaseName = "NEWS_AGGREGATOR";
 
 function getEnvVar(key: string): string {
     const value = process.env[key];
