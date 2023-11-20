@@ -1,7 +1,24 @@
-/**
- * Represents a unified knowledge base entry, consolidating data from various sources.
- */
-export class UnifiedKnowledgeBase {
+import { ObjectId } from 'mongodb';
+import { z } from 'zod';
+
+export const unifiedKnowledgeBaseSchema = z.object({
+    id: z.instanceof(ObjectId), // Unique identifier
+    sourceType: z.string(), // Type of source entity
+    sourceId: z.number(), // Original ID of the source entity
+    content: z.string(), // Main text or title content
+    url: z.string().nullable(), // Original URL of the source
+    finalUrl: z.string().nullable(), // Final URL after redirection
+    description: z.string().nullable(), // Additional description, mainly for News
+    author: z.string(), // Author of the content
+    baseEntityId: z.number(), // Base entity ID for reference
+    createdAt: z.number(), // Timestamp of original creation
+    fetchedAt: z.number(), // Timestamp of fetching into the system
+    updatedAt: z.number().nullable(), // Timestamp of the last update
+});
+
+type UnifiedKnowledgeBaseType = z.infer<typeof unifiedKnowledgeBaseSchema>;
+
+export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
     /**
      * Database schema for UnifiedKnowledgeBase.
      */
@@ -26,7 +43,7 @@ export class UnifiedKnowledgeBase {
     // Method definitions...
 
     // Field definitions with descriptions
-    readonly id: number; // Unique identifier
+    readonly id: ObjectId; // Unique identifier
     readonly sourceType: string; // Type of source entity
     readonly sourceId: number; // Original ID of the source entity
     readonly content: string; // Main text or title content
@@ -44,7 +61,7 @@ export class UnifiedKnowledgeBase {
      * @param {...} All the fields for initialization.
      */
     constructor(
-        id: number,
+        id: ObjectId,
         sourceType: string,
         sourceId: number,
         content: string,
@@ -143,9 +160,11 @@ export class UnifiedKnowledgeBase {
 
         const fetchedAt = sourceObject.fetchedAt || Date.now(); // Use current time if not provided
 
-        return new UnifiedKnowledgeBase(
+        const result = new UnifiedKnowledgeBase(
             id, sourceType, sourceId, content, url, finalUrl, description, author, baseEntityId, createdAt, fetchedAt, updatedAt
         );
+
+        return result
     }
 
 }

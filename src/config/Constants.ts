@@ -34,6 +34,10 @@ export interface ProcessEnv {
     DEV_LLM_GATWAY_HOST: string;
     DEV_LLM_GATWAY_PORT: string;
     DEV_LLM_GATWAY_AUTH_TOKEN: string;
+    MONGO_DB_URL: string;
+    DEV_MONGO_DB_URL: string;
+    DEV_DATABASE_NAME: string;
+    DATABASE_NAME: string;
 }
 
 export const dotEnv: ProcessEnv = {
@@ -42,5 +46,9 @@ export const dotEnv: ProcessEnv = {
     LLM_GATWAY_AUTH_TOKEN: getEnvVar('LLM_GATWAY_AUTH_TOKEN'),
     DEV_LLM_GATWAY_HOST: getEnvVar('DEV_LLM_GATWAY_HOST'),
     DEV_LLM_GATWAY_PORT: getEnvVar('DEV_LLM_GATWAY_PORT'),
-    DEV_LLM_GATWAY_AUTH_TOKEN: getEnvVar('DEV_LLM_GATWAY_AUTH_TOKEN')
+    DEV_LLM_GATWAY_AUTH_TOKEN: getEnvVar('DEV_LLM_GATWAY_AUTH_TOKEN'),
+    MONGO_DB_URL: getEnvVar('MONGO_DB_URL'),
+    DEV_MONGO_DB_URL: getEnvVar('DEV_MONGO_DB_URL'),
+    DEV_DATABASE_NAME: getEnvVar('DEV_DATABASE_NAME'),
+    DATABASE_NAME: getEnvVar('DATABASE_NAME')
 };
