@@ -6,7 +6,7 @@ import { CLIConfiguration } from "./config/CLIConfiguration.js";
 import { MongoClient } from 'mongodb';
 import { dotEnv } from './config/Constants.js';
 import { MongoUnifiedKnowledgeBaseService } from './application/services/MongoUnifiedKnowledgeBaseService.js';
-import { UnifiedKnowledgeBase } from './application/entities/UnifiedKnowledgeBase.js';
+import { SourceTypeEnum, UnifiedKnowledgeBase } from './application/entities/UnifiedKnowledgeBase.js';
 import { UnifiedKnowledgeBaseDTO } from './application/dtos/UnifiedKnowledgeBaseDTO.js';
 
 // Extracting command line arguments
@@ -22,47 +22,43 @@ console.log("Application started with environment: " + configuration.env);
 (async () => {
     const contentFetcherDatabase = new ContentFetcherDatabase()
     const newsAggregatorDatabase = new NewsAggregatorDatabase()
+    const mongoClient = new MongoClient(dotEnv.DEV_MONGO_DB_URL);
+    const mongoUnifiedKnowledgeBaseService = new MongoUnifiedKnowledgeBaseService(mongoClient)
+    await mongoUnifiedKnowledgeBaseService.deleteAll()
+
 
     await contentFetcherDatabase.connect()
     await newsAggregatorDatabase.connect()
 
-    const contentArray: Content[] = []
     await contentFetcherDatabase
         .contentWithForLoop(async (content) => {
-            console.log(content.id + " fetchedAt " + content.fetchedAt);
-            contentArray.push(content)
+            const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Content, content)
+            const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+            const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
             return false
         },
             undefined)
 
-    // await newsAggregatorDatabase
-    //     .newsWithForLoop(async (news) => {
-    //         console.log(news.id + " fetchedAt " + news.fetchedAt + " content " + news.title);
-    //         return false
-    //     },
-    //         undefined)
+    await newsAggregatorDatabase
+        .newsWithForLoop(async (news) => {
+            const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.News, news)
+            const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+            const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            return false
+        },
+            undefined)
 
-    // await newsAggregatorDatabase
-    //     .tweetsWithForLoop(async (tweet) => {
-    //         console.log(tweet.id + " postTime " + tweet.postTime + " title " + tweet.title);
-    //         return false
-    //     },
-    //         undefined)
+    await newsAggregatorDatabase
+        .tweetsWithForLoop(async (tweet) => {
+            const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Tweet, tweet)
+            const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+            const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            return false
+        },
+            undefined)
+
+    console.log("Done")
 
     await contentFetcherDatabase.close()
     await newsAggregatorDatabase.close()
-
-    const testInput: UnifiedKnowledgeBase[] = contentArray.map(content => { return UnifiedKnowledgeBase.createFromSource("Content", content) })
-    console.log(testInput)
-
-    const mongoClient = new MongoClient(dotEnv.DEV_MONGO_DB_URL);
-
-    const mongoUnifiedKnowledgeBaseService = new MongoUnifiedKnowledgeBaseService(mongoClient)
-    await mongoUnifiedKnowledgeBaseService.deleteAll()
-
-    for (let input of testInput) {
-        const mappedInput = UnifiedKnowledgeBaseDTO.convertFromEntity(input)
-        const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(mappedInput)
-        console.log(result)
-    }
 })();

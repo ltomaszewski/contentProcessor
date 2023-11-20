@@ -1,9 +1,12 @@
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
+import { currentTimeInSeconds } from '../helpers/DateUtils.js';
+
+export const SourceTypeEnum = z.enum(["News", "Content", "Tweet"]);
 
 export const unifiedKnowledgeBaseSchema = z.object({
-    id: z.instanceof(ObjectId), // Unique identifier
-    sourceType: z.string(), // Type of source entity
+    _id: z.instanceof(ObjectId), // Unique identifier
+    sourceType: SourceTypeEnum, // Type of source entity
     sourceId: z.number(), // Original ID of the source entity
     content: z.string(), // Main text or title content
     url: z.string().nullable(), // Original URL of the source
@@ -25,7 +28,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
     static Schema = {
         name: "UnifiedKnowledgeBase",
         properties: {
-            id: 'id', // Unique identifier for each record
+            _id: 'id', // Unique identifier for each record
             sourceType: 'sourceType', // Type of source (e.g., 'Tweet', 'News', 'Content')
             sourceId: 'sourceId', // Original ID from the source entity
             content: 'content', // Main text content from Tweet or Content, or the title from News
@@ -43,8 +46,8 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
     // Method definitions...
 
     // Field definitions with descriptions
-    readonly id: ObjectId; // Unique identifier
-    readonly sourceType: string; // Type of source entity
+    readonly _id: ObjectId; // Unique identifier
+    readonly sourceType: "News" | "Content" | "Tweet"; // Type of source entity
     readonly sourceId: number; // Original ID of the source entity
     readonly content: string; // Main text or title content
     readonly url: string | null; // Original URL of the source
@@ -61,8 +64,8 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
      * @param {...} All the fields for initialization.
      */
     constructor(
-        id: ObjectId,
-        sourceType: string,
+        _id: ObjectId,
+        sourceType: "News" | "Content" | "Tweet",
         sourceId: number,
         content: string,
         url: string | null,
@@ -75,7 +78,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
         updatedAt: number | null
     ) {
         // Initialization of fields
-        this.id = id;
+        this._id = _id;
         this.sourceType = sourceType;
         this.sourceId = sourceId;
         this.content = content;
@@ -99,9 +102,9 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
      **/
 
     static extractAuthor(sourceType: string, title: string): string {
-        if (sourceType === 'Tweet') {
+        if (sourceType === SourceTypeEnum.enum.Tweet) {
             return title;
-        } else if (sourceType === 'News') {
+        } else if (sourceType === SourceTypeEnum.enum.News) {
             const parts = title.split('-');
             return parts.length > 1 ? parts[parts.length - 1].trim() : '';
         }
@@ -115,13 +118,12 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
      * @returns {UnifiedKnowledgeBase} An instance of UnifiedKnowledgeBase.
      */
     static createFromSource(sourceType: string, sourceObject: any): UnifiedKnowledgeBase {
-        let content, url, finalUrl, description, author, createdAt, updatedAt, sourceId;
-        const id = sourceObject.id;
-        const baseEntityId = sourceObject.id; // Assuming it's the same as sourceId
+        let content, url, finalUrl, description, author, createdAt, updatedAt, sourceId, fetchedAt, baseEntityId;
 
         // Determine fields based on source type
         switch (sourceType) {
-            case 'Tweet':
+            case SourceTypeEnum.enum.Tweet:
+                baseEntityId = sourceObject.id
                 sourceId = sourceObject.id;
                 content = sourceObject.text;
                 url = null; // Tweets might not have a separate URL field
@@ -129,39 +131,70 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
                 description = null;
                 author = sourceObject.title; // Author is the title for Tweets
                 createdAt = sourceObject.postTime;
-                updatedAt = null;
+                fetchedAt = sourceObject.postTime;
+                updatedAt = currentTimeInSeconds();
                 break;
 
-            case 'News':
+            case SourceTypeEnum.enum.News:
+                baseEntityId = sourceObject.id_source;
                 sourceId = sourceObject.id;
                 content = sourceObject.title;
                 url = sourceObject.link;
                 finalUrl = null; // To be filled in after resolving redirection
                 description = sourceObject.description;
-                author = sourceObject.title.split('-').pop().trim(); // Extract author from title
+                if (sourceObject.link.includes("news.google.com")) {
+                    // Existing logic to extract author from title
+                    author = sourceObject.title.split('-').pop().trim();
+                } else {
+                    // Logic to use hostname when link is not from Google News
+                    try {
+                        const url = new URL(sourceObject.link);
+                        author = url.hostname;
+                    } catch (error) {
+                        // Handle error (e.g., invalid URL)
+                        console.error("Error parsing URL:", error);
+                        author = "-1";
+                    }
+                }
                 createdAt = sourceObject.publicationDate;
-                updatedAt = null;
+                fetchedAt = sourceObject.fetchedAt;
+                updatedAt = currentTimeInSeconds();
                 break;
-
-            case 'Content':
+            case SourceTypeEnum.enum.Content:
+                baseEntityId = sourceObject.relatedNewsId !== -1 ? sourceObject.relatedNewsId : sourceObject.relatedTweetId;
                 sourceId = sourceObject.id;
                 content = sourceObject.content;
                 url = sourceObject.baseUrl; // Assuming baseUrl is the URL
-                finalUrl = null; // To be filled in after resolving redirection
+                finalUrl = sourceObject.url.length > 1 ? sourceObject.url : null;
                 description = null; // Content might not have a description
-                author = ''; // Author not defined for Content
+                try {
+                    if (sourceObject.url.length > 0) {
+                        const url = new URL(sourceObject.url);
+                        author = url.hostname;
+                    } else {
+                        if (sourceObject.baseUrl.startsWith("https://")) {
+                            const url = new URL(sourceObject.baseUrl);
+                            author = url.hostname;
+                        } else {
+                            const url = new URL("https://" + sourceObject.baseUrl);
+                            author = url.hostname;
+                        }
+                    }
+                } catch (error) {
+                    // Handle error (e.g., invalid URL)
+                    console.error("Error parsing URL:", error);
+                    author = "-1";
+                }
                 createdAt = sourceObject.relatedCreateAt; // Assuming this is the creation date
-                updatedAt = null;
+                fetchedAt = sourceObject.fetchedAt || currentTimeInSeconds(); // Use current time if not provided
+                updatedAt = currentTimeInSeconds();
                 break;
-
             default:
                 throw new Error(`Unsupported source type: ${sourceType}`);
         }
 
-        const fetchedAt = sourceObject.fetchedAt || Date.now(); // Use current time if not provided
-
         const result = new UnifiedKnowledgeBase(
-            id, sourceType, sourceId, content, url, finalUrl, description, author, baseEntityId, createdAt, fetchedAt, updatedAt
+            new ObjectId(sourceObject.id), sourceType, sourceId, content, url, finalUrl, description, author, baseEntityId, createdAt, fetchedAt, updatedAt
         );
 
         return result

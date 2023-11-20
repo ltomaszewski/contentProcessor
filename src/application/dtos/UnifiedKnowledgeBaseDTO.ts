@@ -21,7 +21,7 @@ export type UnifiedKnowledgeBaseDTO = z.infer<typeof unifiedKnowledgeBaseDTOSche
 export const UnifiedKnowledgeBaseDTO = {
     convertFromEntity(entity: UnifiedKnowledgeBase): UnifiedKnowledgeBaseDTO {
         const candidate: UnifiedKnowledgeBaseDTO = {
-            id: entity.id.toString(),
+            id: entity._id.toString(),
             sourceType: entity.sourceType,
             sourceId: entity.sourceId,
             content: entity.content,

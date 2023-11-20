@@ -70,7 +70,7 @@ export class DatabaseRepository {
         await collection.deleteOne(filter);
     }
 
-    async query(collectionName: string, query: any): Promise<T[]> {
+    async query(collectionName: string, query: any): Promise<any[]> {
         if (this.db === null) {
             throw new Error('Database is null');
         }

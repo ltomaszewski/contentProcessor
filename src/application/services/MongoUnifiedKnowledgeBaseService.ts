@@ -22,18 +22,18 @@ export class MongoUnifiedKnowledgeBaseService {
         const candidate = unifiedKnowledgeBaseSchema.parse(
             {
                 ...dto,
-                id: new ObjectId(),
+                _id: new ObjectId(),
             }
         );
         const { insertedId } = await this.getUnifiedKnowledgeBaseCollection().insertOne(candidate);
-        return UnifiedKnowledgeBaseDTO.convertFromEntity({ ...dto, id: insertedId });
+        return UnifiedKnowledgeBaseDTO.convertFromEntity({ ...dto, _id: insertedId });
     }
 
     async updateUnifiedKnowledgeBase(id: string, dto: Omit<Partial<UnifiedKnowledgeBaseDTO>, "id">): Promise<UnifiedKnowledgeBaseDTO | null> {
         const candidate = unifiedKnowledgeBaseSchema.partial().parse(dto);
 
         const updatedEntity = await this.getUnifiedKnowledgeBaseCollection().findOneAndUpdate(
-            { id: new ObjectId(id) },
+            { _id: new ObjectId(id) },
             { $set: candidate },
             { returnDocument: "after" }
         );
