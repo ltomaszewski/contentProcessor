@@ -26,7 +26,6 @@ console.log("Application started with environment: " + configuration.env);
     const mongoUnifiedKnowledgeBaseService = new MongoUnifiedKnowledgeBaseService(mongoClient)
     await mongoUnifiedKnowledgeBaseService.deleteAll()
 
-
     await contentFetcherDatabase.connect()
     await newsAggregatorDatabase.connect()
 
@@ -57,8 +56,35 @@ console.log("Application started with environment: " + configuration.env);
         },
             undefined)
 
+    await contentFetcherDatabase
+        .contentTrackChanges(async (newContent, oldContent, err) => {
+            if (oldContent === undefined && newContent) {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Content, newContent)
+                const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+                await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            }
+        });
+
+    await newsAggregatorDatabase
+        .tweetsTrackChanges(async (newTweet, oldTweet, err) => {
+            if (oldTweet === undefined && newTweet) {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Tweet, newTweet)
+                const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+                await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            }
+        });
+
+    await newsAggregatorDatabase
+        .newsTrackChanges(async (newNews, oldNews, err) => {
+            if (oldNews === undefined && newNews) {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.News, newNews)
+                const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+                await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            }
+        });
+
     console.log("Done")
 
-    await contentFetcherDatabase.close()
-    await newsAggregatorDatabase.close()
+    // await contentFetcherDatabase.close()
+    // await newsAggregatorDatabase.close()
 })();

@@ -170,9 +170,13 @@ export class DatabaseRepository {
                 // Insert: new_val present and old_val null
                 // Update: diffrence between old_val and new_val give answer what has changed
                 // Delete: old_val present and new_val null
-                const old_val = change.old_val;
-                const new_val = change.new_val;
-                callback(new_val, old_val, err)
+                if (err) {
+                    callback(undefined, undefined, err)
+                } else {
+                    const old_val = change.old_val;
+                    const new_val = change.new_val;
+                    callback(new_val, old_val, err)
+                }
             });
         } else {
             throw new Error('Connection is null');
