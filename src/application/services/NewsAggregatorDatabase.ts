@@ -194,7 +194,7 @@ export class NewsAggregatorDatabase {
             .databaseRepository
             .changes(
                 this.databaseName,
-                News.Schema.name,
+                ScraperItem.Schema.name,
                 (new_val, oldVal, err) => {
                     let newScraperItem: ScraperItem | undefined = undefined;
                     if (new_val) {
