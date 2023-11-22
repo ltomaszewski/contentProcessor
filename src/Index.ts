@@ -56,6 +56,14 @@ console.log("Application started with environment: " + configuration.env);
         },
             undefined)
 
+    await newsAggregatorDatabase.scraperItemWithForLoop(async (scraperItem) => {
+        const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, scraperItem)
+        const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+        const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+        return false
+    },
+        undefined);
+
     await contentFetcherDatabase
         .contentTrackChanges(async (newContent, oldContent, err) => {
             if (oldContent === undefined && newContent) {
@@ -83,8 +91,14 @@ console.log("Application started with environment: " + configuration.env);
             }
         });
 
-    console.log("Done")
+    await newsAggregatorDatabase
+        .scraperItemTrackChanges(async (newScraperItem, oldScraperItem, err) => {
+            if (oldScraperItem === undefined && newScraperItem) {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, newScraperItem)
+                const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+                await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            }
+        });
 
-    // await contentFetcherDatabase.close()
-    // await newsAggregatorDatabase.close()
+    console.log("Done")
 })();

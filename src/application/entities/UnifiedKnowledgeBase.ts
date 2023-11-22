@@ -2,7 +2,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import { currentTimeInSeconds } from '../helpers/DateUtils.js';
 
-export const SourceTypeEnum = z.enum(["News", "Content", "Tweet"]);
+export const SourceTypeEnum = z.enum(["News", "Content", "Tweet", "ScraperItem"]);
 
 export const unifiedKnowledgeBaseSchema = z.object({
     _id: z.instanceof(ObjectId), // Unique identifier
@@ -47,7 +47,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
 
     // Field definitions with descriptions
     readonly _id: ObjectId; // Unique identifier
-    readonly sourceType: "News" | "Content" | "Tweet"; // Type of source entity
+    readonly sourceType: "News" | "Content" | "Tweet" | "ScraperItem"; // Type of source entity
     readonly sourceId: number; // Original ID of the source entity
     readonly content: string; // Main text or title content
     readonly url: string | null; // Original URL of the source
@@ -65,7 +65,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
      */
     constructor(
         _id: ObjectId,
-        sourceType: "News" | "Content" | "Tweet",
+        sourceType: "News" | "Content" | "Tweet" | "ScraperItem",
         sourceId: number,
         content: string,
         url: string | null,
@@ -187,6 +187,17 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
                 }
                 createdAt = sourceObject.relatedCreateAt; // Assuming this is the creation date
                 fetchedAt = sourceObject.fetchedAt || currentTimeInSeconds(); // Use current time if not provided
+                updatedAt = currentTimeInSeconds();
+                break;
+            case SourceTypeEnum.enum.ScraperItem:
+                baseEntityId = -1;
+                sourceId = sourceObject.id;
+                content = sourceObject.title;
+                description = sourceObject.description;
+                url = sourceObject.url;
+                createdAt = sourceObject.timestamp;
+                fetchedAt = sourceObject.fetchedAt;
+                author = sourceObject.author;
                 updatedAt = currentTimeInSeconds();
                 break;
             default:

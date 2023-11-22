@@ -4,6 +4,7 @@
   "description": "",
   "main": "dist/Index.js",
   "scripts": {
+    "build": "tsc --build --clean && tsc",
     "start": "tsc --build --clean && tsc && pm2 start src/ecosystem.config.cjs --env production",
     "stop": "pm2 stop all"
   },

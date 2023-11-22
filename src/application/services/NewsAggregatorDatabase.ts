@@ -69,8 +69,22 @@ export class NewsAggregatorDatabase {
         await result.close()
     }
 
+    async tweetsTrackChanges(change: (newTweet: Tweet | undefined, oldTweet: Tweet | undefined, err: Error) => void) {
+        await this.databaseRepository.changes(this.databaseName, Tweet.Schema.name, (new_val, oldVal, err) => {
+            let newTweet: Tweet | undefined = undefined;
+            if (new_val) {
+                newTweet = Tweet.createFromObject(new_val);
+            }
+            let oldTweet: Tweet | undefined = undefined;
+            if (oldVal) {
+                oldTweet = Tweet.createFromObject(oldVal);
+            }
+            change(newTweet, oldTweet, err);
+        });
+    }
+
     async news(): Promise<News[]> {
-        const result = (await this.databaseRepository.query(this.databaseName, News.Schema.name, function (table) { return table }))
+        const result = await this.databaseRepository.query(this.databaseName, News.Schema.name, function (table) { return table })
         const rawResult = await result.toArray()
         const sampleEntities = rawResult.map((object: any) => { return News.createFromObject(object) })
         await result.close()
@@ -78,7 +92,7 @@ export class NewsAggregatorDatabase {
     }
 
     async newsBy(id: number): Promise<News | undefined> {
-        const result = (await this.databaseRepository.query(this.databaseName, News.Schema.name, function (table) { return table.filter({ id: id }) }))
+        const result = await this.databaseRepository.query(this.databaseName, News.Schema.name, function (table) { return table.filter({ id: id }) })
         const rawResult = await result.toArray()
         const entities = rawResult.map((object: any) => { return News.createFromObject(object) })
         await result.close()
@@ -90,7 +104,7 @@ export class NewsAggregatorDatabase {
     }
 
     async newsWithForLoop(forLoop: (news: News) => Promise<boolean>, lastContentCreatedTime: number | undefined) {
-        const result = (await this.databaseRepository.query(
+        const result = await this.databaseRepository.query(
             this.databaseName,
             News.Schema.name,
             function (table) {
@@ -102,7 +116,7 @@ export class NewsAggregatorDatabase {
                     return table
                         .orderBy({ index: r.desc('id') })
                 }
-            }))
+            })
         try {
             let nextEntity
             let nextNews
@@ -119,20 +133,6 @@ export class NewsAggregatorDatabase {
         await result.close()
     }
 
-    async tweetsTrackChanges(change: (newTweet: Tweet | undefined, oldTweet: Tweet | undefined, err: Error) => void) {
-        await this.databaseRepository.changes(this.databaseName, Tweet.Schema.name, (new_val, oldVal, err) => {
-            let newTweet: Tweet | undefined = undefined;
-            if (new_val) {
-                newTweet = Tweet.createFromObject(new_val);
-            }
-            let oldTweet: Tweet | undefined = undefined;
-            if (oldVal) {
-                oldTweet = Tweet.createFromObject(oldVal);
-            }
-            change(newTweet, oldTweet, err);
-        });
-    }
-
     async newsTrackChanges(change: (newNews: News | undefined, oldNews: News | undefined, err: Error) => void) {
         await this.databaseRepository.changes(this.databaseName, News.Schema.name, (new_val, oldVal, err) => {
             let newNews: News | undefined = undefined;
@@ -145,6 +145,68 @@ export class NewsAggregatorDatabase {
             }
             change(newNews, oldNews, err);
         });
+    }
+
+    async scraperItemBy(id: number): Promise<ScraperItem | undefined> {
+        const result = await this.databaseRepository.query(this.databaseName, ScraperItem.Schema.name, function (table) { return table.filter({ id: id }) })
+        const rawResult = await result.toArray()
+        const entities = rawResult.map((object: any) => { return ScraperItem.createFromObject(object) })
+        await result.close()
+        if (entities.length == 1) {
+            return entities[0]
+        } else {
+            return undefined
+        }
+    }
+
+    async scraperItemWithForLoop(forLoop: (news: ScraperItem) => Promise<boolean>, lastFetchedAt: number | undefined) {
+        const result = await this.databaseRepository.query(
+            this.databaseName,
+            ScraperItem.Schema.name,
+            function (table) {
+                if (lastFetchedAt) {
+                    return table
+                        .orderBy({ index: r.desc('id') })
+                        .filter(r.row('fetchedAt').gt(lastFetchedAt))
+                } else {
+                    return table
+                        .orderBy({ index: r.desc('id') })
+                }
+            })
+        try {
+            let nextEntity
+            let nextScraperItem
+            while (result.hasNext) {
+                nextEntity = await result.next()
+                nextScraperItem = ScraperItem.createFromObject(nextEntity)
+                const shouldStop = await forLoop(nextScraperItem)
+                if (shouldStop) {
+                    await result.close()
+                    return
+                }
+            }
+        } catch { }
+        await result.close()
+    }
+
+    async scraperItemTrackChanges(change: (newScraperItem: ScraperItem | undefined, oldScraperItem: ScraperItem | undefined, err: Error) => void) {
+        await this
+            .databaseRepository
+            .changes(
+                this.databaseName,
+                News.Schema.name,
+                (new_val, oldVal, err) => {
+                    let newScraperItem: ScraperItem | undefined = undefined;
+                    if (new_val) {
+                        newScraperItem = ScraperItem.createFromObject(new_val);
+                    }
+                    let oldScraperItem: ScraperItem | undefined = undefined;
+                    if (oldVal) {
+                        oldScraperItem = ScraperItem.createFromObject(oldVal);
+                    }
+                    change(newScraperItem, oldScraperItem, err);
+                }
+            );
     }
 }
 
@@ -219,5 +281,63 @@ export class News {
         this.description = description;
         this.link = link;
         this.tags = tags;
+    }
+}
+
+export class ScraperItem {
+    static Schema = {
+        name: "ScraperItem"
+    };
+
+    readonly id: number
+    readonly author: string;
+    readonly url: string;
+    readonly date: string;
+    readonly timestamp: number;
+    readonly title: string;
+    readonly description: string;
+    readonly fetchedAt: number;
+
+    constructor(
+        id: number,
+        url: string,
+        title: string | null = null,
+        timestamp: number,
+        date: string | null = null,
+        description: string | null = null,
+        fetchedAt: number
+    ) {
+        this.id = id;
+        this.url = url;
+        this.title = title ?? '';
+        this.date = date ?? '';
+        this.timestamp = timestamp ?? ScraperItem.convertToTimestamp(this.date);
+        this.description = description ?? '';
+        this.fetchedAt = fetchedAt
+
+        if (url.startsWith("https://")) {
+            const newUrl = new URL(url);
+            this.author = newUrl.hostname;
+        } else {
+            const newUrl = new URL("https://" + url);
+            this.author = newUrl.hostname;
+        }
+    }
+
+    private static convertToTimestamp(dateStr: string): number {
+        const date = new Date(dateStr);
+        return date.getTime() / 1000;
+    }
+
+    static createFromObject(obj: any): ScraperItem {
+        return new ScraperItem(
+            obj.id,
+            obj.url,
+            obj.title,
+            obj.timestamp,
+            obj.date,
+            obj.description,
+            obj.fetchedAt
+        );
     }
 }
