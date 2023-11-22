@@ -199,6 +199,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
                 fetchedAt = sourceObject.fetchedAt;
                 author = sourceObject.author;
                 updatedAt = currentTimeInSeconds();
+                finalUrl = null;
                 break;
             default:
                 throw new Error(`Unsupported source type: ${sourceType}`);

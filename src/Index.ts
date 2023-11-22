@@ -56,13 +56,14 @@ console.log("Application started with environment: " + configuration.env);
         },
             undefined)
 
-    await newsAggregatorDatabase.scraperItemWithForLoop(async (scraperItem) => {
-        const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, scraperItem)
-        const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
-        const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
-        return false
-    },
-        undefined);
+    await newsAggregatorDatabase
+        .scraperItemWithForLoop(async (scraperItem) => {
+            const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, scraperItem)
+            const unifiedKnowledgeBaseDTO = UnifiedKnowledgeBaseDTO.convertFromEntity(unifiedKnowledgeBase)
+            const result = await mongoUnifiedKnowledgeBaseService.createUnifiedKnowledgeBase(unifiedKnowledgeBaseDTO)
+            return false
+        },
+            undefined);
 
     await contentFetcherDatabase
         .contentTrackChanges(async (newContent, oldContent, err) => {
