@@ -1,8 +1,7 @@
 import * as r from 'rethinkdb';
-import { Schema } from './Schema.js';
 
 // DatabaseRepository - a repository for interacting with RethinkDB databases
-export class DatabaseRepository {
+export class RethinkDBRepository {
     // host - the hostname of the RethinkDB server
     readonly host: string;
     // port - the port number of the RethinkDB server
@@ -20,12 +19,8 @@ export class DatabaseRepository {
     }
 
     // connect - establishes a connection to the RethinkDB server
-    async connect(databaseName: string, updateSchema: boolean = true) {
+    async connect(databaseName: string) {
         this.conn = await r.connect({ host: this.host, port: this.port })
-        if (updateSchema) {
-            const schema = new Schema(databaseName, this)
-            await schema.updateSchemaIfNeeded(this.forceDrop)
-        }
     }
 
     // closeConnection - closes the RethinkDB connection

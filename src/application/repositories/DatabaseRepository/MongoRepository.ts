@@ -1,81 +1,58 @@
-import { MongoClient, Db, Collection } from 'mongodb';
+import { MongoClient, Collection, ObjectId, WithId } from 'mongodb';
 
-// DatabaseRepository - a repository for interacting with MongoDB databases
-export class DatabaseRepository {
-    readonly uri: string;
-    private client: MongoClient;
-    private db: Db | null;
+interface BaseDocument {
+    _id?: ObjectId;
+}
 
-    constructor(uri: string) {
-        this.uri = uri;
-        this.client = new MongoClient(uri);
-        this.db = null;
+export class MongoRepository<T extends BaseDocument> {
+    private collection: Collection<T>;
+
+    constructor(db: MongoClient, collectionName: string) {
+        this.collection = db.db().collection<T>(collectionName);
     }
 
-    async connect(databaseName: string): Promise<void> {
-        await this.client.connect();
-        this.db = this.client.db(databaseName);
+    async create(item: Omit<T, '_id'>): Promise<WithId<T>> {
+        const result = await this.collection.insertOne(item as any);
+        return { ...item, _id: result.insertedId } as WithId<T>;
     }
 
-    async closeConnection(): Promise<void> {
-        await this.client.close();
+    async findAll(): Promise<T[]> {
+        const documents = await this.collection.find({}).toArray();
+        return documents.map(doc => doc as T);
     }
 
-    async createCollectionIfNotExists(collectionName: string): Promise<void> {
-        if (this.db === null) {
-            throw new Error('Database is null');
-        }
-
-        const collections = await this.db.listCollections({ name: collectionName }, { nameOnly: true }).toArray();
-        if (collections.length === 0) {
-            await this.db.createCollection(collectionName);
-        }
+    async findById(id: ObjectId): Promise<T | null> {
+        const document = await this.collection.findOne({ _id: id } as any);
+        return document as T | null;
     }
 
-    async dropDatabaseIfExists(databaseName: string): Promise<void> {
-        if (this.client === null) {
-            throw new Error('Client is null');
-        }
-
-        const dbList = await this.client.db().admin().listDatabases();
-        if (dbList.databases.some(db => db.name === databaseName)) {
-            await this.client.db(databaseName).dropDatabase();
-        }
+    async find(query: Partial<T>): Promise<T[]> {
+        const documents = await this.collection.find(query as any).toArray();
+        return documents.map(doc => doc as T);
     }
 
-    async insert(collectionName: string, object: any): Promise<void> {
-        if (this.db === null) {
-            throw new Error('Database is null');
-        }
-
-        const collection = this.db.collection(collectionName);
-        await collection.insertOne(object);
+    async update(id: ObjectId, item: Partial<T>): Promise<T | null> {
+        const result = await this.collection.findOneAndUpdate(
+            { _id: id as any },
+            { $set: item },
+            { returnDocument: 'after' }
+        );
+        if (!result) return null;
+        return result as T;
     }
 
-    async update(collectionName: string, filter: any, obj: any): Promise<void> {
-        if (this.db === null) {
-            throw new Error('Database is null');
-        }
-
-        const collection = this.db.collection(collectionName);
-        await collection.updateOne(filter, { $set: obj });
+    async delete(id: string): Promise<void> {
+        await this.collection.deleteOne({ _id: new ObjectId(id) } as any);
     }
 
-    async delete(collectionName: string, filter: any): Promise<void> {
-        if (this.db === null) {
-            throw new Error('Database is null');
+    async deleteAll() {
+        try {
+            const result = await this.collection.deleteMany({});
+            console.log(`Deleted ${result.deletedCount} documents`);
+        } catch (error) {
+            console.error('Error deleting documents', error);
+        } finally {
+            console.log('Finished deleting documents');
         }
-
-        const collection = this.db.collection(collectionName);
-        await collection.deleteOne(filter);
-    }
-
-    async query(collectionName: string, query: any): Promise<any[]> {
-        if (this.db === null) {
-            throw new Error('Database is null');
-        }
-
-        const collection: Collection = this.db.collection(collectionName);
-        return collection.find(query).toArray();
     }
 }

@@ -1,18 +1,18 @@
 import * as r from 'rethinkdb';
 import { DatabaseHost, DatabasePort, baseContentFetcherDatabaseName } from "../../config/Constants.js";
-import { DatabaseRepository } from "../repositories/DatabaseRepository/DatabaseRepository.js";
+import { RethinkDBRepository } from "../repositories/DatabaseRepository/RethinkDBRepository.js";
 
 export class ContentFetcherDatabase {
-    private databaseRepository: DatabaseRepository;
+    private databaseRepository: RethinkDBRepository;
     private databaseName: string;
 
     constructor() {
         this.databaseName = `${baseContentFetcherDatabaseName}`;
-        this.databaseRepository = new DatabaseRepository(DatabaseHost, DatabasePort, false)
+        this.databaseRepository = new RethinkDBRepository(DatabaseHost, DatabasePort, false)
     }
 
     async connect() {
-        await this.databaseRepository.connect(this.databaseName, false);
+        await this.databaseRepository.connect(this.databaseName);
     }
 
     async close() {
@@ -45,7 +45,9 @@ export class ContentFetcherDatabase {
                     return
                 }
             }
-        } catch { }
+        } catch (err) {
+            console.error(err);
+        }
         await result.close()
     }
 

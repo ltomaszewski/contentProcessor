@@ -1,22 +1,22 @@
 import * as r from 'rethinkdb';
-import { DatabaseRepository } from '../repositories/DatabaseRepository/DatabaseRepository.js';
+import { RethinkDBRepository } from '../repositories/DatabaseRepository/RethinkDBRepository.js';
 import { DatabaseHost, DatabasePort, baseNewsAggregatorDatabaseName } from '../../config/Constants.js';
 
 export class NewsAggregatorDatabase {
-    private databaseRepository: DatabaseRepository;
+    private databaseRepository: RethinkDBRepository;
     private databaseName: string;
 
     constructor() {
         this.databaseName = `${baseNewsAggregatorDatabaseName}`;
-        this.databaseRepository = new DatabaseRepository(DatabaseHost, DatabasePort, false)
+        this.databaseRepository = new RethinkDBRepository(DatabaseHost, DatabasePort, false)
     }
 
     async connect() {
-        await this.databaseRepository.connect(this.databaseName, false);
+        await this.databaseRepository.connect(this.databaseName);
     }
 
     async close() {
-        await this.databaseRepository.closeConnection()
+        await this.databaseRepository.closeConnection();
     }
 
     async tweets(): Promise<Tweet[]> {
@@ -65,7 +65,9 @@ export class NewsAggregatorDatabase {
                     return
                 }
             }
-        } catch { }
+        } catch (err) {
+            console.error(err);
+        }
         await result.close()
     }
 

@@ -26,7 +26,7 @@ export class UnifiedKnowledgeBase implements UnifiedKnowledgeBaseType {
      * Database schema for UnifiedKnowledgeBase.
      */
     static Schema = {
-        name: "UnifiedKnowledgeBase",
+        name: "UnifiedKnowledgeBase2",
         properties: {
             _id: 'id', // Unique identifier for each record
             sourceType: 'sourceType', // Type of source (e.g., 'Tweet', 'News', 'Content')
