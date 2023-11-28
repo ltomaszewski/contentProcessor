@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { CLIConfiguration } from "./config/CLIConfiguration.js";
 import { MongoClient } from 'mongodb';
-import { dotEnv } from './config/Constants.js';
+import { Env, dotEnv } from './config/Constants.js';
 import { UnifiedKnowledgeBaseService } from './application/services/UnifiedKnowledgeBaseService.js';
 import { UnifiedKnowledgeBaseRepository } from './application/repositories/UnifiedKnowledgeBaseRepository.js';
 import { ContentCollectorService } from './application/services/ContentCollectorService.js';
@@ -18,10 +18,9 @@ console.log("Application started with environment: " + configuration.env);
 
 // Asynchronous function for database operations
 (async () => {
-    const mongoClient = new MongoClient(dotEnv.DEV_MONGO_DB_URL);
+    const mongoClient = new MongoClient(configuration.env == Env.Dev ? dotEnv.DEV_MONGO_DB_URL : dotEnv.MONGO_DB_URL);
     const repository = new UnifiedKnowledgeBaseRepository(mongoClient);
     const unifiedKnowledgeBaseService = new UnifiedKnowledgeBaseService(repository);
-    await unifiedKnowledgeBaseService.deleteAll();
 
     const contentCollectorService = new ContentCollectorService(unifiedKnowledgeBaseService);
     await contentCollectorService.start();

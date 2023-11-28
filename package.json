@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc --build --clean && tsc",
     "start": "tsc --build --clean && tsc && pm2 start src/ecosystem.config.cjs --env production",
-    "stop": "pm2 stop all"
+    "stop": "pm2 stop CONTENT_PROCESSOR",
+    "deploy": "pm2 delete CONTENT_PROCESSOR && tsc --build --clean && tsc && pm2 start src/ecosystem.config.cjs --env production"
   },
   "keywords": [],
   "author": "",
