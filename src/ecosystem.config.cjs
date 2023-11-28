@@ -4,8 +4,7 @@ module.exports = {
             "name": "CONTENT_PROCESSOR",
             "script": "dist/index.js",
             "args": "--runmode=producation",
-            "exp_backoff_restart_delay": 10000,
-            "watch": true
+            "exp_backoff_restart_delay": 10000
         }
     ]
 };

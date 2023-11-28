@@ -73,15 +73,19 @@ export class NewsAggregatorDatabase {
 
     async tweetsTrackChanges(change: (newTweet: Tweet | undefined, oldTweet: Tweet | undefined, err: Error) => void) {
         await this.databaseRepository.changes(this.databaseName, Tweet.Schema.name, (new_val, oldVal, err) => {
-            let newTweet: Tweet | undefined = undefined;
-            if (new_val) {
-                newTweet = Tweet.createFromObject(new_val);
+            try {
+                let newTweet: Tweet | undefined = undefined;
+                if (new_val) {
+                    newTweet = Tweet.createFromObject(new_val);
+                }
+                let oldTweet: Tweet | undefined = undefined;
+                if (oldVal) {
+                    oldTweet = Tweet.createFromObject(oldVal);
+                }
+                change(newTweet, oldTweet, err);
+            } catch (err) {
+                console.error(err);
             }
-            let oldTweet: Tweet | undefined = undefined;
-            if (oldVal) {
-                oldTweet = Tweet.createFromObject(oldVal);
-            }
-            change(newTweet, oldTweet, err);
         });
     }
 
@@ -131,21 +135,27 @@ export class NewsAggregatorDatabase {
                     return
                 }
             }
-        } catch { }
+        } catch (err) {
+            console.error(err);
+        }
         await result.close()
     }
 
     async newsTrackChanges(change: (newNews: News | undefined, oldNews: News | undefined, err: Error) => void) {
         await this.databaseRepository.changes(this.databaseName, News.Schema.name, (new_val, oldVal, err) => {
-            let newNews: News | undefined = undefined;
-            if (new_val) {
-                newNews = News.createFromObject(new_val);
+            try {
+                let newNews: News | undefined = undefined;
+                if (new_val) {
+                    newNews = News.createFromObject(new_val);
+                }
+                let oldNews: News | undefined = undefined;
+                if (oldVal) {
+                    oldNews = News.createFromObject(oldVal);
+                }
+                change(newNews, oldNews, err);
+            } catch (err) {
+                console.error(err);
             }
-            let oldNews: News | undefined = undefined;
-            if (oldVal) {
-                oldNews = News.createFromObject(oldVal);
-            }
-            change(newNews, oldNews, err);
         });
     }
 
@@ -187,7 +197,9 @@ export class NewsAggregatorDatabase {
                     return
                 }
             }
-        } catch { }
+        } catch (err) {
+            console.error(err);
+        }
         await result.close()
     }
 
@@ -198,15 +210,19 @@ export class NewsAggregatorDatabase {
                 this.databaseName,
                 ScraperItem.Schema.name,
                 (new_val, oldVal, err) => {
-                    let newScraperItem: ScraperItem | undefined = undefined;
-                    if (new_val) {
-                        newScraperItem = ScraperItem.createFromObject(new_val);
+                    try {
+                        let newScraperItem: ScraperItem | undefined = undefined;
+                        if (new_val) {
+                            newScraperItem = ScraperItem.createFromObject(new_val);
+                        }
+                        let oldScraperItem: ScraperItem | undefined = undefined;
+                        if (oldVal) {
+                            oldScraperItem = ScraperItem.createFromObject(oldVal);
+                        }
+                        change(newScraperItem, oldScraperItem, err);
+                    } catch (err) {
+                        console.error(err);
                     }
-                    let oldScraperItem: ScraperItem | undefined = undefined;
-                    if (oldVal) {
-                        oldScraperItem = ScraperItem.createFromObject(oldVal);
-                    }
-                    change(newScraperItem, oldScraperItem, err);
                 }
             );
     }

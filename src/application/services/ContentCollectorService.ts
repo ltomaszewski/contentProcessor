@@ -16,50 +16,6 @@ export class ContentCollectorService {
         await this.contentFetcherDatabase.connect();
         await this.newsAggregatorDatabase.connect();
 
-        console.log("Fetching content from content database...");
-        await this.contentFetcherDatabase
-            .contentWithForLoop(async (content) => {
-                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Content, content);
-                try {
-                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                } catch { }
-                return false;
-            },
-                undefined);
-
-        console.log("Fetching content from news database...");
-        await this.newsAggregatorDatabase
-            .newsWithForLoop(async (news) => {
-                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.News, news)
-                try {
-                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                } catch { }
-                return false
-            },
-                undefined);
-
-        console.log("Fetching tweets from news database...");
-        await this.newsAggregatorDatabase
-            .tweetsWithForLoop(async (tweet) => {
-                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Tweet, tweet)
-                try {
-                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                } catch { }
-                return false
-            },
-                undefined);
-
-        console.log("Fetching scraper items from news database...");
-        await this.newsAggregatorDatabase
-            .scraperItemWithForLoop(async (scraperItem) => {
-                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, scraperItem)
-                try {
-                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                } catch { }
-                return false
-            },
-                undefined);
-
         console.log("Starting content change tracking...");
         await this.contentFetcherDatabase
             .contentTrackChanges(async (newContent, oldContent, err) => {
@@ -107,5 +63,49 @@ export class ContentCollectorService {
                     return false
                 }
             });
+
+        console.log("Fetching content from content database...");
+        await this.contentFetcherDatabase
+            .contentWithForLoop(async (content) => {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Content, content);
+                try {
+                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
+                } catch { }
+                return false;
+            },
+                undefined);
+
+        console.log("Fetching content from news database...");
+        await this.newsAggregatorDatabase
+            .newsWithForLoop(async (news) => {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.News, news)
+                try {
+                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
+                } catch { }
+                return false
+            },
+                undefined);
+
+        console.log("Fetching tweets from news database...");
+        await this.newsAggregatorDatabase
+            .tweetsWithForLoop(async (tweet) => {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Tweet, tweet)
+                try {
+                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
+                } catch { }
+                return false
+            },
+                undefined);
+
+        console.log("Fetching scraper items from news database...");
+        await this.newsAggregatorDatabase
+            .scraperItemWithForLoop(async (scraperItem) => {
+                const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, scraperItem)
+                try {
+                    await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
+                } catch { }
+                return false
+            },
+                undefined);
     }
 }
