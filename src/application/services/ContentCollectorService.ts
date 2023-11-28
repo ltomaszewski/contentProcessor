@@ -23,7 +23,9 @@ export class ContentCollectorService {
                     const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Content, newContent)
                     try {
                         await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                    } catch { }
+                    } catch (err) {
+                        console.error(err);
+                    }
                     return false
                 }
             });
@@ -35,7 +37,9 @@ export class ContentCollectorService {
                     const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.Tweet, newTweet)
                     try {
                         await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                    } catch { }
+                    } catch (err) {
+                        console.error(err);
+                    }
                     return false
                 }
             });
@@ -47,7 +51,9 @@ export class ContentCollectorService {
                     const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.News, newNews)
                     try {
                         await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                    } catch { }
+                    } catch (err) {
+                        console.error(err);
+                    }
                     return false
                 }
             });
@@ -59,7 +65,9 @@ export class ContentCollectorService {
                     const unifiedKnowledgeBase = UnifiedKnowledgeBase.createFromSource(SourceTypeEnum.enum.ScraperItem, newScraperItem)
                     try {
                         await this.unifiedKnowledgeBaseService.create(unifiedKnowledgeBase);
-                    } catch { }
+                    } catch (err) {
+                        console.error(err);
+                    }
                     return false
                 }
             });
